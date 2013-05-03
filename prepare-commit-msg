@@ -1,0 +1,21 @@
+#!/usr/bin/env ruby
+
+TICKET_REGEXP = /[A-Z]+-\d+/    # WEB-12345
+
+TICKET_REF_FORMAT = 'Ticket #%s # ' # JIRA Ticket reference syntax.
+
+branch_name  = `git branch --no-color 2> /dev/null`[/^\* (.+)/, 1]
+msg_filename = ARGV[0]
+
+if ticket_in_branch = branch_name.match(TICKET_REGEXP)
+  ticket_ref = TICKET_REF_FORMAT % ticket_in_branch.to_s
+  old_msg    = File.read msg_filename
+
+  unless old_msg.match ticket_ref
+    File.open msg_filename, 'w' do |new_msg|
+      new_msg.write ticket_ref + old_msg
+    end
+  end
+end
+
+exit 0
