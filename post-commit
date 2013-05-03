@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+require 'colorize'
+
+TICKET_REGEXP     = /[A-Z]+-\d+/    # WEB-12345
+
+LINK = "https://*****.atlassian.net/browse/"
+
+puts "[Warning] log time: Please do not forget to log your time".red
+
+commit_message = %x{git log -1 --abbrev-commit}.split("\n").last.strip
+
+jira_ticket = commit_message.match(TICKET_REGEXP)
+puts "please visit #{LINK}#{jira_ticket.to_s} to log time".green
+
+exec("firefox #{LINK}#{jira_ticket.to_s}")
+
