@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+require 'colorize'
+
+TICKET_REGEXP = /[A-Z]+-\d+/    # WEB-12345
+
+commit_message = File.open ARGV[0], 'r' { |f| f.read }
+
+unless commit_message.match(TICKET_REGEXP)
+  puts  "[ERROR] commit-message-format: JIRA ticket number is not existed.".red
+  exit(1)
+end
