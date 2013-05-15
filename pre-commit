@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+require 'colorize'
+
+# check for rails debugger
+rails_result = `grep -rlsn "binding.pry" --exclude-dir=".git" .`
+if rails_result != ""
+  puts "[Error] you put binding.pry in your files\n".red
+  puts rails_result
+  exit(1)
+end
+
