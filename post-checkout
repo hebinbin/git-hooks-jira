@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+require 'colorize'
+
+current_branch = %x{git branch}.split("\n").select { |i| i[0] == "*" }.first.gsub("* ", "")
+
+%x{git push -u origin current_branch}
