@@ -1,17 +1,114 @@
 #!/usr/bin/env ruby
 
-require 'colorize'
+require 'json'
+require 'net/https'
+
+module JIRA
+  class HttpClient
+    DEFAULT = {
+      :site => "https://******.atlassian.net",
+      :path => "rest/api/latest/issue",
+      :ticket_number => "",
+      :resource => "",
+      :username => "",
+      :password => "",
+      :use_ssl => true,
+      :verify_mode => OpenSSL::SSL::VERIFY_NONE
+    }
+
+    attr_reader :options
+
+    def initialize(options)
+      @options = DEFAULT.merge(options)
+    end
+
+    def uri
+       URI.parse "#{@options[:site]}/#{@options[:path]}/#{@options[:ticket_number]}/#{@options[:resource]}"
+    end
+
+    def make_request(http_method, body='', header={})
+      request_data = Net::HTTP.const_get(http_method.to_s.capitalize).new(uri.request_uri, header)
+      request_data.body = body unless body.nil?
+      request_data.basic_auth(@options[:username], @options[:password])
+      # send request data to jira rest api
+      http_conn.request request_data
+    end
+
+    def http_conn
+      http_conn  = Net::HTTP.new uri.host, uri.port
+      http_conn.use_ssl = @options[:use_ssl]
+      http_conn.verify_mode = @options[:verify_mode]
+      http_conn
+    end
+  end
+end
+
+def header
+  { "content-type" => "application/json" }
+end
 
 TICKET_REGEXP     = /[A-Z]+-\d+/    # WEB-12345
 
-LINK = "https://*****.atlassian.net/browse/"
+TIME_REGEXP = /\d+[.]+\d+h/  # 0.5h, 2.0h
 
-puts "[Warning] log time: Please do not forget to log your time".red
+cur_br_name = %x{git branch}.split("\n").select { |i| i[0] == "*" }.first.gsub("* ", "")
 
 commit_message = %x{git log -1 --abbrev-commit}.split("\n").last.strip
 
-jira_ticket = commit_message.match(TICKET_REGEXP)
-puts "please visit #{LINK}#{jira_ticket.to_s} to log time".green
+ticket_number = commit_message.match(TICKET_REGEXP).to_s
 
-exec("firefox #{LINK}#{jira_ticket.to_s}")
+worked_time = commit_message.match(TIME_REGEXP).to_s
+
+puts "log #{ticket_number} worked time to #{worked_time}"
+
+jira_configs = %x{git config --list}.split("\n").select do |config|
+  config.match('jira.username') or config.match("jira.password")
+end
+
+if jira_configs.length != 2
+  puts "you did not set username or password in your git config"
+  puts "please go to your jira to change status from Open to In Progess"
+else
+  jira_info = jira_configs.inject({})  do |hash, arr|
+    tmp = arr.split("=")
+    hash.merge Hash[*tmp]
+  end #{ "jira.username" => "your username", "jira.password" => "your password"}
+
+  # log my worked time 
+  options = {
+    :ticket_number => ticket_number,
+    :resource      => "worklog",
+    :username      => jira_info["jira.username"],
+    :password      => jira_info["jira.password"]
+  }
+
+  body = JSON.generate(
+    { 
+      :comment => commit_message,
+      :timeSpent => worked_time 
+    }
+  )
+
+  JIRA::HttpClient.new(options).make_request('post', body, header)
+  
+  # log commit message to jira comment
+  options = {
+    :ticket_number => ticket_number,
+    :resource      => "comment",
+    :username      => jira_info["jira.username"],
+    :password      => jira_info["jira.password"]
+  }
+
+  body = JSON.generate(
+    { 
+      :body => "Branch name: #{cur_br_name} \n #{commit_message}"
+    }
+  )
+
+  JIRA::HttpClient.new(options).make_request('post', body, header)
+end
+
+
+
+
 

@@ -1,12 +1,19 @@
 #!/usr/bin/env ruby
 
-require 'colorize'
-
 TICKET_REGEXP = /[A-Z]+-\d+/    # WEB-12345
 
-commit_message = File.open ARGV[0], 'r' { |f| f.read }
+TIME_REGEXP = /\d+[.]+\d+h/  # 0.5h, 2.0h
+
+commit_message = File.open(ARGV[0], 'r')  do |f| 
+  f.read
+end
 
 unless commit_message.match(TICKET_REGEXP)
-  puts  "[ERROR] commit-message-format: JIRA ticket number is not existed.".red
+  puts  "[ERROR] commit-message-format: JIRA ticket number is not existed."
+  exit(1)
+end
+
+unless commit_message.match(TIME_REGEXP)
+  puts  "[ERROR] commit-message-format: you do not input your work time."
   exit(1)
 end

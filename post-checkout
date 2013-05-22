@@ -1,53 +1,96 @@
 #!/usr/bin/env ruby
 
-require 'colorize'
 require 'json'
 require 'net/https'
 
-# get branch name
-current_branch = %x{git branch}.split("\n").select { |i| i[0] == "*" }.first.gsub("* ", "")
+module JIRA
+  class HttpClient
+    DEFAULT = {
+      :site => "https://*******.atlassian.net",
+      :path => "rest/api/latest/issue",
+      :ticket_number => "",
+      :resource => "",
+      :username => "",
+      :password => "",
+      :use_ssl => true,
+      :verify_mode => OpenSSL::SSL::VERIFY_NONE
+    }
 
-# push current local branch to remote server
-%x{git push -u origin current_branch}
+    attr_reader :options
 
-# you need to do the following two things in advance
-# git config --global jira.username "your username"
-# git config --global jira.password "your password"
+    def initialize(options)
+      @options = DEFAULT.merge(options)
+    end
 
-# get jira username and password
-git_configs = %x{git config --list}.split("\n")
+    def uri
+       URI.parse "#{@options[:site]}/#{@options[:path]}/#{@options[:ticket_number]}/#{@options[:resource]}"
+    end
 
-jira_configs = git_configs.select do |config|
+    def make_request(http_method, body='', header={})
+      request_data = Net::HTTP.const_get(http_method.to_s.capitalize).new(uri.request_uri, header)
+      request_data.body = body unless body.nil?
+      request_data.basic_auth(@options[:username], @options[:password])
+      # send request data to jira rest api
+      http_conn.request request_data
+    end
+
+    def http_conn
+      http_conn  = Net::HTTP.new uri.host, uri.port
+      http_conn.use_ssl = @options[:use_ssl]
+      http_conn.verify_mode = @options[:verify_mode]
+      http_conn
+    end
+  end
+end
+
+def header
+  { "content-type" => "application/json" }
+end
+
+TICKET_REGEXP = /[A-Z]+-\d+/    # WEB-12345
+
+# get current branch name
+cur_br_name = %x{git branch}.split("\n").select { |i| i[0] == "*" }.first.gsub("* ", "")
+
+# get ticket number
+ticket_number = cur_br_name.match(TICKET_REGEXP).to_s
+
+#puts "first step: push #{current_branch_name} to origin"
+#push_branch_to_remote(current_branch_name)
+
+
+puts "update #{ticket_number} status from 'Start Progress' to 'In Progess'"
+
+jira_configs = %x{git config --list}.split("\n").select do |config|
   config.match('jira.username') or config.match("jira.password")
 end
 
 if jira_configs.length != 2
-  puts "you did not set username or password in your git config".red
-  puts "please go to your jira to change status from Open to In Progess".green
+  puts "you did not set username or password in your git config"
+  puts "please go to your jira to change status from Open to In Progess"
 else
-  jira_configs = jira_configs.inject({})  do |hash, arr| 
+  jira_info = jira_configs.inject({})  do |hash, arr|
     tmp = arr.split("=")
     hash.merge Hash[*tmp]
-  end #jira_configs = { "jira.username" => "your username", "jira.password" => "your password"}
-   
-  options = {
-    :ticket_number => "",
-    :resource => "transitions",
-    :username => jira_configs["jira.username"]
-    :password => jira_configs["jira.password"]
-  } 
+  end #{ "jira.username" => "your username", "jira.password" => "your password"}
 
-  header = { "content-type" => "application/json" }
+  options = {
+    :ticket_number => ticket_number,
+    :resource      => "transitions",
+    :username      => jira_info["jira.username"],
+    :password      => jira_info["jira.password"]
+  }
+
   body = JSON.generate(
-  {"update" => 
-    { "comment" => 
-      [{ "add" => 
+   {"update" =>
+    { "comment" =>
+      [{ "add" =>
          { "body" => "begin to work"}
         }]
     },
     "fields" => {
         "assignee" => {
-            "name" => jira_configs["jira.username"]
+            "name" => jira_info["jira.username"]
         }
 #        "resolution": {
 #            "name": "Fixed"
@@ -56,54 +99,9 @@ else
     "transition" => {
         "id" => "11"
     }
-      
+
   })
 
   JIRA::HttpClient.new(options).make_request('post', body, header)
 end
 
-
-module JIRA
-  class HttpClient 
-    
-    DEFAULT =  {
-    :site => "https://rakuten.atlassian.net",
-    :path => "rest/api/latest/issue",
-    :ticket_number => "",
-    :resource => "",
-    :username => "",
-    :password => "",
-    :use_ssl => true,
-    :verify_mode => OpenSSL::SSL::VERIFY_NONE
-  } 
-    attr_reader :options
-    
-    def initialize(options)
-      @options = DEFAULT.merge(options)
-    end 
-
-    def make_request(http_method, body='', header={})
-      request_data = Net::HTTP.const_get(http_method.to_s.capitalize).new(uri.request_uri, headers)
-      request_data.body = body unless body.nil?
-      request_data.basic_auth(@options[:username], @options[:password])
-      # send request data to jira rest api
-      http_conn_basic_auth.request request_data
-    end 
-     
-    def http_conn_basic_auth
-      http_conn(uri)
-    end
-    
-    def http_conn
-      http_conn  = Net::HTTP.new uri.host, uri.port
-      http_conn.use_ssl = @options[:use_ssl] 
-      http_conn.verify_mode = @options[:verify_mode]
-      http_conn
-    end
-
-    def uri
-      #URI.parse 'https://rakuten.atlassian.net/rest/api/latest/issue/GI-19866/transitions'
-       URI.parse '#{@options[:site]}/#{@options[:path]}/#{@options[:ticket_num]}/#{@options[:resource]}'
-    end
-  end
-end
