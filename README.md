@@ -1,10 +1,8 @@
 git-hooks-jira
 ==============
 
-    When you use JIRA, do you want to input JIRA-ticket in your commit message. 
-  Therefore, in the future, when you look back to code, you can easily know why you or your team member changed this code. In addtionally, by using Agile development, you also need to log time to let project management team knows what are doing now? How about this ticket? They can know how the project goes.
-  But sometimes, you will forget to log your working time.
-  How to solve this kind of problem ? Here is the solution, Using git hooks (the detail please check at http://git-scm.com/book/en/Customizing-Git-Git-Hooks)and JIRA rest api (please check at https://docs.atlassian.com/jira/REST/latest/) to automatically update log time according to JIRA ticket number.
+    When you use JIRA, do you want to input JIRA-ticket in your commit message. Therefore, in the future, when you look back to code, you can easily know why you or your team member changed this code. In addtionally, by using Agile development, you also need to log time to let project management team knows what are doing now? How about this ticket? They can know how the project goes.
+  But sometimes, you will forget to log your working time. How to solve this kind of problem ? Here is the solution, Using git hooks (the detail please check at http://git-scm.com/book/en/Customizing-Git-Git-Hooks)and JIRA rest api (please check at https://docs.atlassian.com/jira/REST/latest/) to automatically update log time according to JIRA ticket number.
 
   Environment:
   
@@ -17,6 +15,7 @@ git-hooks-jira
   2. set you JIRA username and password in git config
 
      git config --global jira.username hogehoge
+     
      git config --global jira.password hogehoge
 
   3. Go to your project, use ls -al command to check whether you have ".git"
@@ -26,10 +25,15 @@ git-hooks-jira
      commit" "prepare-commit-msg" from git-hooks-jira folder to current folder.
 
   5. change the property of files.
+  
      sudo chmod +x commit-msg
+
      sudo chmod +x post-checkout
+
      sudo chmod +x post-commit
+     
      sudo chmod +x pre-commit
+     
      sudo chmod +x prepare-commit-msg
 
   6. Go to post-commit file, change site link to your JIRA address.
@@ -48,6 +52,7 @@ git-hooks-jira
       time in your commit message.
 
       git add something
+     
       git commit -m "#0.3h fixed a bug about display issue"
 
       the commit message will automatically become "Ticket #WEB-12345 #0.3h fixed a bug about display issue" and read JIRA api to update ticket.
