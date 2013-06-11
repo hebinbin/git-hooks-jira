@@ -2,7 +2,7 @@ git-hooks-jira
 ==============
   
   When you use JIRA, do you want to input JIRA-ticket in your commit message. Therefore, in the future, when you look back to code, you can easily know why you or your team member changed this code. In addtionally, by using Agile development, you also need to log time to let project management team knows what are doing now? How about this ticket? They can know how the project goes.
-  But sometimes, you will forget to log your working time. How to solve this kind of problem ? Here is the solution, Using git hooks (the detail please check at http://git-scm.com/book/en/Customizing-Git-Git-Hooks)and JIRA rest api (please check at https://docs.atlassian.com/jira/REST/latest/) to automatically update log time according to JIRA ticket number.
+  But sometimes, you will forget to log your working time. How to solve this kind of problem ? Here is the solution, Using git hooks (the detail please check at http://git-scm.com/book/en/Customizing-Git-Git-Hooks) and JIRA rest api (please check at https://docs.atlassian.com/jira/REST/latest/) to automatically update log time according to JIRA ticket number.
 
   Environment:
   
