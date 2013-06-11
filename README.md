@@ -38,7 +38,7 @@ Change the property of files.
 
 Go to `post-commit` file, change site link to your JIRA address.
 
-Work pattern: (Using pull request)
+## Work pattern: (Using pull request)
   
 1) You need to checkout a new branch. Please put ticket number in the branch like `pr-WEB-12345`.
  
