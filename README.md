@@ -40,22 +40,19 @@ Go to `post-commit` file, change site link to your JIRA address.
 
 Work pattern: (Using pull request)
   
-   1) You need to checkout a new branch. Please put ticket number in the branch
-      like pr-WEB-12345.
+1) You need to checkout a new branch. Please put ticket number in the branch like `pr-WEB-12345`.
  
-      `git checkout -b pr-WEB-12345 origin/remote-branch`
+   `git checkout -b pr-WEB-12345 origin/remote-branch`
 
-  after that git will read `post-checkout` hooks to change status of WEB-12345 from `Start progress` to `In progress`
+after that git will read `post-checkout` hooks to change status of WEB-12345 from `Start progress` to `In progress`
 
+2) You begin to change the code. When you commit, please input your worked time in your commit message.
 
-   2) You begin to change the code. When you commit, please input your worked
-      time in your commit message.
-
-      `git add something`
+   `git add something`
      
-      `git commit -m "#0.3h fixed a bug about display issue"`
+   `git commit -m "#0.3h fixed a bug about display issue"`
 
-      the commit message will automatically become `Ticket #WEB-12345 #0.3h fixed a bug about display issue` and read JIRA api to update ticket.
+the commit message will automatically become `Ticket #WEB-12345 #0.3h fixed a bug about display issue` and read JIRA api to update ticket.
 
 
 
